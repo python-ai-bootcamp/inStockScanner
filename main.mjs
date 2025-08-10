@@ -32,7 +32,7 @@ function logger(logLine) {
 
 logger(validations);
 
-mailCredentials=JSON.parse(readFileSync("./private_keys/.malijet_api_key.json", encoding="utf-8"))
+mailCredentials=JSON.parse(readFileSync("./private_keys/.malijet_api_key.json"))
 
 const mailjet = Mailjet.apiConnect(
     mailCredentials.key,
