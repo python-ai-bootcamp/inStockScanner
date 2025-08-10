@@ -1,5 +1,18 @@
 # This script installs a scheduled task to run the website availability checker.
 
+try {
+    # Find the path to node.exe
+    $NodePath = (Get-Command node).Source
+    if (-not $NodePath) {
+        throw "Node.js executable not found in PATH. Please ensure Node.js is installed and accessible."
+    }
+    Write-Host "Found Node.js at: $NodePath"
+}
+catch {
+    Write-Error "Node.js executable not found in PATH. Please ensure Node.js is installed and accessible."
+    exit 1
+}
+
 # Get the directory of the current script
 $ScriptPath = $PSScriptRoot
 
@@ -10,15 +23,14 @@ $TaskName = "WebsiteAvailabilityChecker"
 $XmlTemplatePath = Join-Path $ScriptPath "scheduledTaskWindows.xml"
 
 # Read the XML template file
-# The file is UTF-16, so specify the encoding
 $XmlContent = Get-Content -Path $XmlTemplatePath -Encoding Unicode -Raw
 
-# Replace placeholders in the XML content
+# Replace placeholders in the XML content using regex for robustness
 $Author = "$($env:USERDOMAIN)\$($env:USERNAME)"
-$WorkingDirectory = $ScriptPath
+$XmlContent = $XmlContent -replace '<Command>.*?</Command>', "<Command>`"$NodePath`"</Command>"
+$XmlContent = $XmlContent -replace '<WorkingDirectory>.*?</WorkingDirectory>', "<WorkingDirectory>$ScriptPath</WorkingDirectory>"
 $XmlContent = $XmlContent -replace '<Author>.*?</Author>', "<Author>$Author</Author>"
 $XmlContent = $XmlContent -replace '<URI>.*?</URI>', "<URI>\$TaskName</URI>"
-$XmlContent = $XmlContent -replace '<WorkingDirectory>.*?</WorkingDirectory>', "<WorkingDirectory>$WorkingDirectory</WorkingDirectory>"
 
 # Register the scheduled task
 try {
