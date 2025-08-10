@@ -1,0 +1,5 @@
+[
+  {"url":"https://hahishook.com/product/אגוז-מקדמיה-טבעי-בינוני/","xpath":"//b[text()='חסר לספק']",         "successCondition":"==0", "enabled": true   , "refactoryPeriod_hour": 168},
+  {"url":"https://hahishook.com/product/ממרח-חמאת-קשיו-טבעי/","xpath":"//b[text()='חסר לספק']",         "successCondition":"==0", "enabled": false  , "refactoryPeriod_hour": 168},
+  {"url":"https://hahishook.com/product/סאןקאר-ספריי-שקוף-לילדים-spf50/","xpath":"//b[text()='חסר לספק']", "successCondition":"==0", "enabled": true   , "refactoryPeriod_hour": 168}
+]
