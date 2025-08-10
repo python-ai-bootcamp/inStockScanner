@@ -24,11 +24,13 @@ This project is a Node.js-based web scraper that automatically checks a list of 
 
 ## Configuration
 
+All configuration files must be placed in the `configuration/` directory.
+
 ### 1. Mailjet API Keys
 
 The script requires Mailjet API credentials to send emails.
 
-1.  Create a file named `.mailjet_api_key.json` inside the `private_keys` directory.
+1.  Create a file named `.mailjet_api_key.json` inside the `configuration/` directory.
 2.  Add your Mailjet API key and secret to this file in the following format:
 
     ```json
@@ -38,9 +40,9 @@ The script requires Mailjet API credentials to send emails.
     }
     ```
 
-### 2. Products to Check (`validations.json`)
+### 2. Products to Check (`configuration/validations.json`)
 
-The `validations.json` file contains an array of products to monitor.
+The `configuration/validations.json` file contains an array of products to monitor.
 
 *   `url`: The URL of the product page.
 *   `xpath`: An XPath expression to select an element on the page. This is typically used to find an "out of stock" message.
@@ -48,7 +50,7 @@ The `validations.json` file contains an array of products to monitor.
 *   `enabled`: Set to `true` to enable the check for this product, or `false` to disable it.
 *   `refactoryPeriod_hour`: The number of hours to wait before sending another notification for this product after it's found to be in stock.
 
-**Example `validations.json`:**
+**Example `configuration/validations.json`:**
 
 ```json
 [
@@ -62,11 +64,11 @@ The `validations.json` file contains an array of products to monitor.
 ]
 ```
 
-### 3. Email Recipients (`mailRecipients.json`)
+### 3. Email Recipients (`configuration/mailRecipients.json`)
 
-The `mailRecipients.json` file contains a list of people to notify.
+The `configuration/mailRecipients.json` file contains a list of people to notify.
 
-**Example `mailRecipients.json`:**
+**Example `configuration/mailRecipients.json`:**
 
 ```json
 [
@@ -81,6 +83,19 @@ The `mailRecipients.json` file contains a list of people to notify.
 ]
 ```
 
+### 4. Email Sender (`configuration/mailSender.json`)
+
+The `configuration/mailSender.json` file specifies the sender of the notification email.
+
+**Example `configuration/mailSender.json`:**
+
+```json
+{
+  "Email": "sender@example.com",
+  "Name": "Website Availability Checker"
+}
+```
+
 ## Usage
 
 To run the script, use the following command:
@@ -93,8 +108,8 @@ The script will log its progress to the console and to a `log.txt` file.
 
 ## How It Works
 
-The script uses `puppeteer` to launch a headless Chrome browser and navigate to the URLs specified in `validations.json`. For each URL, it uses the provided `xpath` to count the number of matching elements on the page. It then evaluates the `successCondition` to determine if the product is in stock.
+The script uses `puppeteer` to launch a headless Chrome browser and navigate to the URLs specified in `configuration/validations.json`. For each URL, it uses the provided `xpath` to count the number of matching elements on the page. It then evaluates the `successCondition` to determine if the product is in stock.
 
-If a product is in stock and not within its refactory period, it is added to a list of available products. After checking all products, if this list is not empty, the script uses the Mailjet API to send an email to all recipients in `mailRecipients.json`.
+If a product is in stock and not within its refactory period, it is added to a list of available products. After checking all products, if this list is not empty, the script uses the Mailjet API to send an email to all recipients in `configuration/mailRecipients.json`.
 
-The `refactoryPeriods.json` file is automatically created and managed by the script to keep track of when a notification was last sent for each product, ensuring you don't get duplicate alerts.
+The `configuration/refactoryPeriods.json` file is automatically created and managed by the script to keep track of when a notification was last sent for each product, ensuring you don't get duplicate alerts.
