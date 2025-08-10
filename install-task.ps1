@@ -1,5 +1,11 @@
 # This script installs a scheduled task to run the website availability checker.
 
+# Check for Administrator privileges
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Error "This script must be run with Administrator privileges. Please re-run it from an elevated PowerShell prompt."
+    exit 1
+}
+
 try {
     # Find the path to node.exe
     $NodePath = (Get-Command node).Source
@@ -26,11 +32,14 @@ $XmlTemplatePath = Join-Path $ScriptPath "scheduledTaskWindows.xml"
 $XmlContent = Get-Content -Path $XmlTemplatePath -Encoding Unicode -Raw
 
 # Replace placeholders in the XML content using regex for robustness
-$Author = "$($env:USERDOMAIN)\$($env:USERNAME)"
+# Set the task to run as the SYSTEM account to avoid password issues and allow it to run unattended.
+$XmlContent = $XmlContent -replace '(?s)<Principal>.*?</Principal>', '<Principal id="Author"><UserId>S-1-5-18</UserId><RunLevel>HighestAvailable</RunLevel></Principal>'
 $XmlContent = $XmlContent -replace '<Command>.*?</Command>', "<Command>`"$NodePath`"</Command>"
+$XmlContent = $XmlContent -replace '<Arguments>.*?</Arguments>', "<Arguments>main.mjs</Arguments>"
 $XmlContent = $XmlContent -replace '<WorkingDirectory>.*?</WorkingDirectory>', "<WorkingDirectory>$ScriptPath</WorkingDirectory>"
-$XmlContent = $XmlContent -replace '<Author>.*?</Author>', "<Author>$Author</Author>"
 $XmlContent = $XmlContent -replace '<URI>.*?</URI>', "<URI>\$TaskName</URI>"
+
+# The <Author> tag is inside the <Principal> block which is now static, so replacing it separately is no longer needed.
 
 # Register the scheduled task
 try {
