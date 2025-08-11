@@ -28,27 +28,38 @@ $TaskName = "WebsiteAvailabilityChecker"
 # Path to the XML template
 $XmlTemplatePath = Join-Path $ScriptPath "scheduledTaskWindows.xml"
 
-# Read the XML template file
-$XmlContent = Get-Content -Path $XmlTemplatePath -Encoding Unicode -Raw
-
-# Replace placeholders in the XML content using regex for robustness
-# Set the task to run as the SYSTEM account to avoid password issues and allow it to run unattended.
-$XmlContent = $XmlContent -replace '(?s)<Principal>.*?</Principal>', '<Principal id="Author"><UserId>S-1-5-18</UserId><RunLevel>HighestAvailable</RunLevel></Principal>'
-$XmlContent = $XmlContent -replace '<Command>.*?</Command>', "<Command>`"$NodePath`"</Command>"
-$XmlContent = $XmlContent -replace '<Arguments>.*?</Arguments>', "<Arguments>main.mjs</Arguments>"
-$XmlContent = $XmlContent -replace '<WorkingDirectory>.*?</WorkingDirectory>', "<WorkingDirectory>$ScriptPath</WorkingDirectory>"
-$XmlContent = $XmlContent -replace '<URI>.*?</URI>', "<URI>\$TaskName</URI>"
-
-# The <Author> tag is inside the <Principal> block which is now static, so replacing it separately is no longer needed.
-
-# Register the scheduled task
 try {
-    # The -Force parameter ensures that if the task already exists, it will be updated.
-    Register-ScheduledTask -TaskName $TaskName -Xml $XmlContent -Force -ErrorAction Stop
+    # Load the XML file into an XML object for robust manipulation
+    [xml]$XmlContent = Get-Content -Path $XmlTemplatePath -Encoding Unicode
+
+    # Define the XML namespace to correctly find elements
+    $xmlns = "http://schemas.microsoft.com/windows/2004/02/mit/task"
+    $nsmgr = New-Object System.Xml.XmlNamespaceManager($XmlContent.NameTable)
+    $nsmgr.AddNamespace("task", $xmlns)
+
+    # Modify the XML object's properties
+    # Set the task to run as the SYSTEM account
+    $XmlContent.SelectSingleNode("//task:Principals/task:Principal/task:UserId", $nsmgr).InnerText = "S-1-5-18"
+    # Remove the LogonType node, as it's not needed for the SYSTEM account and causes errors.
+    $LogonTypeNode = $XmlContent.SelectSingleNode("//task:Principals/task:Principal/task:LogonType", $nsmgr)
+    if ($LogonTypeNode) {
+        $LogonTypeNode.ParentNode.RemoveChild($LogonTypeNode)
+    }
+
+    # Set the command, arguments, and working directory
+    $XmlContent.SelectSingleNode("//task:Actions/task:Exec/task:Command", $nsmgr).InnerText = $NodePath
+    $XmlContent.SelectSingleNode("//task:Actions/task:Exec/task:Arguments", $nsmgr).InnerText = "main.mjs"
+    $XmlContent.SelectSingleNode("//task:Actions/task:Exec/task:WorkingDirectory", $nsmgr).InnerText = $ScriptPath
+
+    # Set the URI
+    $XmlContent.SelectSingleNode("//task:RegistrationInfo/task:URI", $nsmgr).InnerText = "\$TaskName"
+
+    # Register the scheduled task using the modified XML object's OuterXml
+    Register-ScheduledTask -TaskName $TaskName -Xml $XmlContent.OuterXml -Force -ErrorAction Stop
     Write-Host "Scheduled task '$TaskName' has been created/updated successfully."
 }
 catch {
-    Write-Error "Failed to create/update scheduled task. Error: $_"
+    Write-Error "An error occurred while processing the XML file or registering the task. Error: $_"
     # Exit with a non-zero status code to indicate failure
     exit 1
 }
