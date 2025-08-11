@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 import Mailjet from 'node-mailjet';
 import { createHash } from 'crypto';
 import { readFileSync, appendFileSync, writeFileSync} from 'fs';
+import { resolve } from 'path';
 
 function hashIdGen(validationObject) {
   return createHash('sha256').update(`${validationObject.url}_${validationObject.xpath}_${validationObject.successCondition}_${validationObject.refactoryPeriod_hour}`).digest('hex');
@@ -74,8 +75,14 @@ const sendMail=function(inStockProducts){
 
 const scanProducts = async function(){
   logger("scanProducts:: entered");
-  const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)))
-  const browser = await puppeteer.launch({ headless: true,args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)));
+  const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
+  logger(`Puppeteer will use user data directory: ${userDataDir}`);
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    userDataDir: userDataDir
+  });
   const page = await browser.newPage();
   const inStockResults=[]
   
