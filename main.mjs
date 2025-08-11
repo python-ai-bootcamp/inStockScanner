@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import puppeteer, { executablePath } from 'puppeteer';
 import Mailjet from 'node-mailjet';
 import { createHash } from 'crypto';
 import { readFileSync, appendFileSync, writeFileSync} from 'fs';
@@ -80,10 +80,13 @@ const scanProducts = async function(){
     const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)));
     const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
     logger(`Puppeteer will use user data directory: ${userDataDir}`);
+    const execPath = executablePath();
+    logger(`Puppeteer will use executable path: ${execPath}`);
     browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      userDataDir: userDataDir
+      userDataDir: userDataDir,
+      executablePath: execPath
     });
     const page = await browser.newPage();
     const inStockResults=[]
