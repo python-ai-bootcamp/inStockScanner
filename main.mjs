@@ -75,61 +75,71 @@ const sendMail=function(inStockProducts){
 
 const scanProducts = async function(){
   logger("scanProducts:: entered");
-  const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)));
-  const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
-  logger(`Puppeteer will use user data directory: ${userDataDir}`);
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    userDataDir: userDataDir
-  });
-  const page = await browser.newPage();
-  const inStockResults=[]
-  
-  let refactoryPeriods = {};
-  const current_timestamp=Date.now()
+  let browser;
   try {
-    refactoryPeriods = JSON.parse(readFileSync(new URL('./configuration/refactoryPeriods.json', import.meta.url), 'utf-8'));
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err; // rethrow other errors
-  }
-  
-  for (const validation of validations) {
-    logger(`scanProducts:: starting to process ${JSON.stringify(validation)}`);
-    await page.goto(validation.url, {
-      waitUntil: 'domcontentloaded',
+    const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)));
+    const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
+    logger(`Puppeteer will use user data directory: ${userDataDir}`);
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      userDataDir: userDataDir
     });
-    logger(`scanProducts:: page loaded`);
-    const xpath = validation.xpath;
-    const result = await page.evaluate((xpath) => {
-      const iterator = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
-      const nodes = [];
-      let node = iterator.iterateNext();
-      while (node) {
-        nodes.push(node.textContent);
-        node = iterator.iterateNext();
-      }
-      return nodes.length;
-    }, xpath);
-    const isSuccess=eval(`${result}${validation.successCondition}`)
-    logger(`${validation.url.padEnd(urlMaxLength,' ')} -> ${isSuccess ? 'inStock' : 'missing'}`);
-    if(isSuccess){
-      if(!(refactoryPeriods[hashIdGen(validation)]) || (refactoryPeriods[hashIdGen(validation)]<current_timestamp)){
-        logger('did not detect any refactory period, or current_timestamp has already exceeded the existing one, adding to product to inStockResults')
-        inStockResults.push(validation.url)
-        if(!(refactoryPeriods[hashIdGen(validation)])){
-          logger('product did not have refactoryPeriod, adding a new one')
-          refactoryPeriods[hashIdGen(validation)]=current_timestamp+validation.refactoryPeriod_hour*3600*1000
-          writeFileSync('./configuration/refactoryPeriods.json', JSON.stringify(refactoryPeriods, null, 2))
+    const page = await browser.newPage();
+    const inStockResults=[]
+
+    let refactoryPeriods = {};
+    const current_timestamp=Date.now()
+    try {
+      refactoryPeriods = JSON.parse(readFileSync(new URL('./configuration/refactoryPeriods.json', import.meta.url), 'utf-8'));
+    } catch (err) {
+      if (err.code !== 'ENOENT') throw err; // rethrow other errors
+    }
+
+    for (const validation of validations) {
+      logger(`scanProducts:: starting to process ${JSON.stringify(validation)}`);
+      await page.goto(validation.url, {
+        waitUntil: 'domcontentloaded',
+      });
+      logger(`scanProducts:: page loaded`);
+      const xpath = validation.xpath;
+      const result = await page.evaluate((xpath) => {
+        const iterator = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+        const nodes = [];
+        let node = iterator.iterateNext();
+        while (node) {
+          nodes.push(node.textContent);
+          node = iterator.iterateNext();
         }
-      }else{
-        logger('current_timestamp has not exceeded the existing refactory period, not adding product inStockResults')
+        return nodes.length;
+      }, xpath);
+      const isSuccess=eval(`${result}${validation.successCondition}`)
+      logger(`${validation.url.padEnd(urlMaxLength,' ')} -> ${isSuccess ? 'inStock' : 'missing'}`);
+      if(isSuccess){
+        if(!(refactoryPeriods[hashIdGen(validation)]) || (refactoryPeriods[hashIdGen(validation)]<current_timestamp)){
+          logger('did not detect any refactory period, or current_timestamp has already exceeded the existing one, adding to product to inStockResults')
+          inStockResults.push(validation.url)
+          if(!(refactoryPeriods[hashIdGen(validation)])){
+            logger('product did not have refactoryPeriod, adding a new one')
+            refactoryPeriods[hashIdGen(validation)]=current_timestamp+validation.refactoryPeriod_hour*3600*1000
+            writeFileSync('./configuration/refactoryPeriods.json', JSON.stringify(refactoryPeriods, null, 2))
+          }
+        }else{
+          logger('current_timestamp has not exceeded the existing refactory period, not adding product inStockResults')
+        }
       }
     }
+    return inStockResults;
+  } catch (error) {
+    logger("!!! CRITICAL ERROR in scanProducts !!!");
+    logger(error.stack || error);
+    return []; // Return an empty array on error
+  } finally {
+    if (browser) {
+      await browser.close();
+      logger("Browser closed in finally block.");
+    }
   }
-
-  await browser.close();
-  return inStockResults
 }
 
 let results=await scanProducts();
