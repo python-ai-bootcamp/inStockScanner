@@ -106,6 +106,34 @@ node main.mjs
 
 The script will log its progress to the console and to a `log.txt` file.
 
+## Scheduling the Checker
+
+To run the checker automatically on a schedule, you can use the provided installation scripts for Windows and Linux.
+
+### Windows
+
+1.  Open PowerShell with **Administrator privileges** ("Run as Administrator").
+2.  Navigate to the project's root directory.
+3.  Run the installation script:
+    ```powershell
+    .\install-task.ps1
+    ```
+    This will create a new scheduled task named "WebsiteAvailabilityChecker" that runs the `main.mjs` script every hour.
+
+### Linux
+
+1.  Open your terminal.
+2.  Navigate to the project's root directory.
+3.  Make the installation script executable:
+    ```bash
+    chmod +x install-task.sh
+    ```
+4.  Run the script:
+    ```bash
+    ./install-task.sh
+    ```
+    This will add a cron job that runs the `main.mjs` script at the beginning of every hour. The output of the script will be logged to `cron.log` in the project directory.
+
 ## How It Works
 
 The script uses `puppeteer` to launch a headless Chrome browser and navigate to the URLs specified in `configuration/validations.json`. For each URL, it uses the provided `xpath` to count the number of matching elements on the page. It then evaluates the `successCondition` to determine if the product is in stock.
