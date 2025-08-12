@@ -1,14 +1,11 @@
 import Mailjet from 'node-mailjet';
 import { readFileSync } from 'fs';
 
-const mailCredentials = JSON.parse(readFileSync(new URL('../configuration/.malijet_api_key.json', import.meta.url)));
-
-const mailjet = Mailjet.apiConnect(
-    mailCredentials.key,
-    mailCredentials.secret
-);
-
-export async function sendNotification({ logger, recipients, sender, subject, htmlPart, textPart }) {
+export async function sendNotification({ logger, recipients, sender, subject, htmlPart, textPart, key }) {
+    const mailjet = Mailjet.apiConnect(
+        key.key,
+        key.secret
+    );
     const request = mailjet
         .post('send', { version: 'v3.1' })
         .request({
