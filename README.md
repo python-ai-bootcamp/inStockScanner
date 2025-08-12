@@ -26,19 +26,40 @@ This project is a Node.js-based web scraper that automatically checks a list of 
 
 All configuration files must be placed in the `configuration/` directory.
 
-### 1. Mailjet API Keys
+### 1. Notification Providers (`configuration/notificationProviders.json`)
 
-The script requires Mailjet API credentials to send emails.
+The `configuration/notificationProviders.json` file contains an array of notification providers to use. This allows for sending notifications through multiple channels (e.g., multiple email providers).
 
-1.  Create a file named `.mailjet_api_key.json` inside the `configuration/` directory.
-2.  Add your Mailjet API key and secret to this file in the following format:
+Each object in the array should have the following properties:
 
-    ```json
-    {
+*   `provider`: The name of the provider module located in the `providers/` directory (e.g., `mailjet.mjs`).
+*   `key`: An object containing the API key and secret for the provider. For Mailjet, this would be `{"key": "YOUR_API_KEY", "secret": "YOUR_SECRET"}`.
+*   `recipients`: An array of recipient objects, each with `Email` and `Name` properties.
+*   `sender`: An object with `Email` and `Name` properties for the sender.
+
+**Example `configuration/notificationProviders.json`:**
+
+```json
+[
+  {
+    "provider": "mailjet.mjs",
+    "key": {
       "key": "YOUR_MAILJET_API_KEY",
       "secret": "YOUR_MAILJET_API_SECRET"
+    },
+    "recipients": [
+      {
+        "Email": "recipient1@example.com",
+        "Name": "Recipient One"
+      }
+    ],
+    "sender": {
+      "Email": "sender@example.com",
+      "Name": "Website Availability Checker"
     }
-    ```
+  }
+]
+```
 
 ### 2. Products to Check (`configuration/validations.json`)
 
@@ -62,38 +83,6 @@ The `configuration/validations.json` file contains an array of products to monit
     "refactoryPeriod_hour": 168
   }
 ]
-```
-
-### 3. Email Recipients (`configuration/mailRecipients.json`)
-
-The `configuration/mailRecipients.json` file contains a list of people to notify.
-
-**Example `configuration/mailRecipients.json`:**
-
-```json
-[
-  {
-    "Email": "recipient1@example.com",
-    "Name": "Recipient One"
-  },
-  {
-    "Email": "recipient2@example.com",
-    "Name": "Recipient Two"
-  }
-]
-```
-
-### 4. Email Sender (`configuration/mailSender.json`)
-
-The `configuration/mailSender.json` file specifies the sender of the notification email.
-
-**Example `configuration/mailSender.json`:**
-
-```json
-{
-  "Email": "sender@example.com",
-  "Name": "Website Availability Checker"
-}
 ```
 
 ## Usage

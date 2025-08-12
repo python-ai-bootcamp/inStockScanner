@@ -12,8 +12,7 @@ function hashIdGen(validationObject) {
 const validations = JSON.parse(readFileSync('./configuration/validations.json', 'utf-8'))
                         .filter(x=>x.enabled)
                         .map(x=>Object.assign(x, {hash_id:hashIdGen(x)}));
-const recipients = JSON.parse(readFileSync('./configuration/recipients.json', 'utf-8'));
-const sender = JSON.parse(readFileSync('./configuration/sender.json', 'utf-8'));
+const notificationProviders = JSON.parse(readFileSync('./configuration/notificationProviders.json', 'utf-8'));
 
 const logPath = './log.txt';
 appendFileSync(logPath, `[${new Date().toISOString()}] Current dir: ${process.cwd()}\n`);
@@ -106,10 +105,6 @@ const scanProducts = async function(){
   }
 }
 
-const notificationProviderConfig = JSON.parse(readFileSync(new URL('./configuration/notificationProvider.json', import.meta.url), 'utf-8'));
-const providerPath = new URL(`./providers/${notificationProviderConfig.provider}`, import.meta.url);
-const notificationProvider = await import(providerPath.href);
-
 let results=await scanProducts();
 logger({message: "scan results", results});
 
@@ -118,14 +113,21 @@ if (results.length > 0) {
   const textPart = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
   const htmlPart = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
 
-  await notificationProvider.sendNotification({
-    logger,
-    recipients,
-    sender,
-    subject,
-    htmlPart,
-    textPart
-  });
+  for (const providerConfig of notificationProviders) {
+    logger(`sending notification for ${providerConfig.provider}`)
+    const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
+    const notificationProvider = await import(providerPath.href);
+    await notificationProvider.sendNotification({
+      logger,
+      recipients: providerConfig.recipients,
+      sender: providerConfig.sender,
+      subject,
+      htmlPart,
+      textPart,
+      key: providerConfig.key
+    });
+    logger(`notification sent for ${providerConfig.provider}`)
+  }
 } else {
   logger("No results found, skipping mail");
 }
