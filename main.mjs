@@ -9,11 +9,11 @@ function hashIdGen(validationObject) {
   return createHash('sha256').update(`${validationObject.url}_${validationObject.xpath}_${validationObject.successCondition}_${validationObject.refactoryPeriod_hour}`).digest('hex');
 }
 
-const rawValidations = readFileSync(new URL('./configuration/validations.json', import.meta.url), 'utf-8');
-const validations = JSON.parse(rawValidations).filter(x=>x.enabled).map(x=>Object.assign(x, {hash_id:hashIdGen(x)}));
-
-const recipients = JSON.parse(readFileSync(new URL('./configuration/recipients.json', import.meta.url), 'utf-8'));
-const sender = JSON.parse(new URL('./configuration/sender.json', import.meta.url), 'utf-8'));
+const validations = JSON.parse(readFileSync('./configuration/validations.json', 'utf-8'))
+                        .filter(x=>x.enabled)
+                        .map(x=>Object.assign(x, {hash_id:hashIdGen(x)}));
+const recipients = JSON.parse(readFileSync('./configuration/recipients.json', 'utf-8'));
+const sender = JSON.parse(readFileSync('./configuration/sender.json', 'utf-8'));
 
 const logPath = './log.txt';
 appendFileSync(logPath, `[${new Date().toISOString()}] Current dir: ${process.cwd()}\n`);
