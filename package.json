@@ -12,6 +12,7 @@
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
     "node-mailjet": "^6.0.9",
-    "puppeteer": "^24.15.0"
+    "puppeteer": "^24.15.0",
+    "twilio": "^5.8.0"
   }
 }

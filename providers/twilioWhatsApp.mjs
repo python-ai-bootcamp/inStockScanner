@@ -1,0 +1,20 @@
+import twilio from 'twilio';
+
+export async function sendNotification({ logger, recipients, sender, textContent, key }) {
+    const client = twilio(key.sid, key.token);
+
+    for (const recipient of recipients) {
+        try {
+            const message = await client.messages.create({
+                from: `whatsapp:${sender}`,
+                body: textContent,
+                to: `whatsapp:${recipient.phoneNumber}`
+            });
+            logger(`SUCCESS SENDING WHATSAPP to ${recipient.phoneNumber}`);
+            logger(message.sid);
+        } catch (error) {
+            logger(`ERROR SENDING WHATSAPP to ${recipient.phoneNumber}`);
+            logger(error);
+        }
+    }
+}
