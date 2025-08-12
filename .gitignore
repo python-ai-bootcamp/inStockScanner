@@ -2,5 +2,5 @@ node_modules/
 .puppeteer_cache/
 configuration/*
 !/configuration/.gitkeep 
-log.txt
+*.log
 

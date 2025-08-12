@@ -6,7 +6,7 @@ import path from 'path';
 
 
 function hashIdGen(validationObject) {
-  return createHash('sha256').update(`${validationObject.url}_${validationObject.xpath}_${validationObject.successCondition}_${validationObject.refactoryPeriod_hour}`).digest('hex');
+  return createHash('sha256').update(`${validationObject.url}_${validationObject.xpath}_${validationObject.successCondition}_${validationObject.refractoryPeriod_hour}`).digest('hex');
 }
 
 const validations = JSON.parse(readFileSync('./configuration/validations.json', 'utf-8'))
@@ -14,7 +14,7 @@ const validations = JSON.parse(readFileSync('./configuration/validations.json', 
                         .map(x=>Object.assign(x, {hash_id:hashIdGen(x)}));
 const notificationProviders = JSON.parse(readFileSync('./configuration/notificationProviders.json', 'utf-8'));
 
-const logPath = './log.txt';
+const logPath = './main.log';
 appendFileSync(logPath, `[${new Date().toISOString()}] Current dir: ${process.cwd()}\n`);
 function str(val) {
   if (typeof val === 'string') return val;
@@ -51,10 +51,10 @@ const scanProducts = async function(){
     const page = await browser.newPage();
     const inStockResults=[]
 
-    let refactoryPeriods = {};
+    let refractoryPeriods = {};
     const current_timestamp=Date.now()
     try {
-      refactoryPeriods = JSON.parse(readFileSync(new URL('./configuration/refactoryPeriods.json', import.meta.url), 'utf-8'));
+      refractoryPeriods = JSON.parse(readFileSync(new URL('./configuration/refractoryPeriods.json', import.meta.url), 'utf-8'));
     } catch (err) {
       if (err.code !== 'ENOENT') throw err; // rethrow other errors
     }
@@ -79,16 +79,16 @@ const scanProducts = async function(){
       const isSuccess=eval(`${result}${validation.successCondition}`)
       logger(`${validation.url.padEnd(urlMaxLength,' ')} -> ${isSuccess ? 'inStock' : 'missing'}`);
       if(isSuccess){
-        if(!(refactoryPeriods[hashIdGen(validation)]) || (refactoryPeriods[hashIdGen(validation)]<current_timestamp)){
-          logger('did not detect any refactory period, or current_timestamp has already exceeded the existing one, adding to product to inStockResults')
+        if(!(refractoryPeriods[hashIdGen(validation)]) || (refractoryPeriods[hashIdGen(validation)]<current_timestamp)){
+          logger('did not detect any refractory period, or current_timestamp has already exceeded the existing one, adding to product to inStockResults')
           inStockResults.push(validation.url)
-          if(!(refactoryPeriods[hashIdGen(validation)])){
-            logger('product did not have refactoryPeriod, adding a new one')
-            refactoryPeriods[hashIdGen(validation)]=current_timestamp+validation.refactoryPeriod_hour*3600*1000
-            writeFileSync('./configuration/refactoryPeriods.json', JSON.stringify(refactoryPeriods, null, 2))
+          if(!(refractoryPeriods[hashIdGen(validation)])){
+            logger('product did not have refractoryPeriod, adding a new one')
+            refractoryPeriods[hashIdGen(validation)]=current_timestamp+validation.refractoryPeriod_hour*3600*1000
+            writeFileSync('./configuration/refractoryPeriods.json', JSON.stringify(refractoryPeriods, null, 2))
           }
         }else{
-          logger('current_timestamp has not exceeded the existing refactory period, not adding product inStockResults')
+          logger('current_timestamp has not exceeded the existing refractory period, not adding product inStockResults')
         }
       }
     }
