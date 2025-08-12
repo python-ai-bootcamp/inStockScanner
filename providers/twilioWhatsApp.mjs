@@ -3,10 +3,15 @@ import twilio from 'twilio';
 export async function sendNotification({ logger, recipients, sender, textContent, key }) {
     const client = twilio(key.sid, key.token);
 
+    let fromNumber = String(sender);
+    if (!fromNumber.startsWith('+')) {
+        fromNumber = `+${fromNumber}`;
+    }
+
     for (const recipient of recipients) {
         try {
             const message = await client.messages.create({
-                from: `whatsapp:${sender}`,
+                from: `whatsapp:${fromNumber}`,
                 body: textContent,
                 to: `whatsapp:${recipient.phoneNumber}`
             });
