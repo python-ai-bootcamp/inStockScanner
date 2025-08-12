@@ -129,5 +129,5 @@ if (results.length > 0) {
     logger(`notification sent for ${providerConfig.provider}`)
   }
 } else {
-  logger("No results found, skipping mail");
+  logger("No results found, skipping notifications");
 }
