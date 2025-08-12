@@ -1,5 +1,4 @@
 import puppeteer, { executablePath } from 'puppeteer';
-import Mailjet from 'node-mailjet';
 import { createHash } from 'crypto';
 import { readFileSync, appendFileSync, writeFileSync} from 'fs';
 import { resolve } from 'path';
@@ -35,43 +34,6 @@ function logger(logLine) {
 }
 
 logger(validations);
-
-const mailCredentials=JSON.parse(readFileSync("./configuration/.malijet_api_key.json"))
-
-const mailjet = Mailjet.apiConnect(
-    mailCredentials.key,
-    mailCredentials.secret
-);
-
-const sendMail=function(inStockProducts){
-  if(inStockProducts.length>0){
-    const request = mailjet
-        .post('send', { version: 'v3.1' })
-        .request({
-          Messages: [
-            {
-              From: mailSender,
-              To: mailRecipients,
-              Subject: "The Hishook Results You Requested Were Found",
-              TextPart: `Daily monitored products on hahishook.com found inStock:\n${inStockProducts.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`,
-              HTMLPart: `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${inStockProducts.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`
-            }
-          ]
-        })
-
-    request
-      .then((result) => {
-          logger("SUCCESS SENDING MAIL")
-          logger(result.body)
-      })
-      .catch((err) => {
-          logger("ERRROR SENDING MAIL")
-          logger(err.statusCode)
-      })
-  }else{
-    logger("No results found, skipping mail")
-  }
-}
 
 const scanProducts = async function(){
   logger("scanProducts:: entered");
@@ -145,7 +107,25 @@ const scanProducts = async function(){
   }
 }
 
-let results=await scanProducts();
-logger("results:\n",results);
+const notificationProviderConfig = JSON.parse(readFileSync(new URL('./configuration/notificationProvider.json', import.meta.url), 'utf-8'));
+const notificationProvider = await import(notificationProviderConfig.provider);
 
-sendMail(results);
+let results=await scanProducts();
+logger({message: "scan results", results});
+
+if (results.length > 0) {
+  const subject = "The Hishook Results You Requested Were Found";
+  const textPart = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
+  const htmlPart = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
+
+  await notificationProvider.sendNotification({
+    logger,
+    recipients: mailRecipients,
+    sender: mailSender,
+    subject,
+    htmlPart,
+    textPart
+  });
+} else {
+  logger("No results found, skipping mail");
+}
