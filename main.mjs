@@ -108,7 +108,8 @@ const scanProducts = async function(){
 }
 
 const notificationProviderConfig = JSON.parse(readFileSync(new URL('./configuration/notificationProvider.json', import.meta.url), 'utf-8'));
-const notificationProvider = await import(notificationProviderConfig.provider);
+const providerPath = new URL(`./providers/${notificationProviderConfig.provider}`, import.meta.url);
+const notificationProvider = await import(providerPath.href);
 
 let results=await scanProducts();
 logger({message: "scan results", results});
