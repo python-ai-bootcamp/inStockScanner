@@ -10,6 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
     "node-mailjet": "^6.0.9",
     "puppeteer": "^24.15.0"
   }
