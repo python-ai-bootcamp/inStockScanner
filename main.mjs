@@ -110,8 +110,8 @@ logger({message: "scan results", results});
 
 if (results.length > 0) {
   const subject = "The Hishook Results You Requested Were Found";
-  const textPart = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
-  const htmlPart = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
+  const textContent = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
+  const structuredContent = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
 
   for (const providerConfig of notificationProviders) {
     logger(`sending notification for ${providerConfig.provider}`)
@@ -122,8 +122,8 @@ if (results.length > 0) {
       recipients: providerConfig.recipients,
       sender: providerConfig.sender,
       subject,
-      htmlPart,
-      textPart,
+      structuredContent,
+      textContent,
       key: providerConfig.key
     });
     logger(`notification sent for ${providerConfig.provider}`)
