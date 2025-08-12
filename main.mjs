@@ -4,6 +4,20 @@ import { readFileSync, appendFileSync, writeFileSync} from 'fs';
 import { resolve } from 'path';
 import path from 'path';
 
+const refractoryPeriodsPath = new URL('./configuration/refractoryPeriods.json', import.meta.url);
+
+if (process.argv.includes('--invalidate-refractory-periods')) {
+  writeFileSync(refractoryPeriodsPath, '{}');
+}
+
+let refractoryPeriods = {};
+const current_timestamp=Date.now()
+try {
+  refractoryPeriods = JSON.parse(readFileSync(refractoryPeriodsPath, 'utf-8'));
+} catch (err) {
+  if (err.code !== 'ENOENT') throw err; // rethrow other errors
+}
+
 
 function hashIdGen(validationObject) {
   return createHash('sha256').update(`${validationObject.url}_${validationObject.xpath}_${validationObject.successCondition}_${validationObject.refractoryPeriod_hour}`).digest('hex');
@@ -50,14 +64,6 @@ const scanProducts = async function(){
     });
     const page = await browser.newPage();
     const inStockResults=[]
-
-    let refractoryPeriods = {};
-    const current_timestamp=Date.now()
-    try {
-      refractoryPeriods = JSON.parse(readFileSync(new URL('./configuration/refractoryPeriods.json', import.meta.url), 'utf-8'));
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err; // rethrow other errors
-    }
 
     for (const validation of validations) {
       logger(`scanProducts:: starting to process ${JSON.stringify(validation)}`);
