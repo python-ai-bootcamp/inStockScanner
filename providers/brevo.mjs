@@ -1,16 +1,24 @@
-import Mailjet from 'node-mailjet';
-import brevo_python
-from brevo_python.rest import ApiException
+import * as brevo from '@getbrevo/brevo';
 
 export async function sendNotification({ logger, recipients, sender, subject, structuredContent, textContent, key }) {
-  configuration = brevo_python.Configuration()
-  configuration.api_key['api-key'] = key
-  api_instance = brevo_python.TransactionalEmailsApi(brevo_python.ApiClient(configuration))
-  send_smtp_email = brevo_python.SendSmtpEmail({
-      sender,
-      to=recipients,
-      subject,
-      html_content=structuredContent,
-      text_content=textContent
-  })
+    const apiInstance = new brevo.TransactionalEmailsApi();
+
+    apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, key);
+
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = structuredContent;
+    sendSmtpEmail.textContent = textContent;
+    sendSmtpEmail.sender = sender;
+    sendSmtpEmail.to = recipients;
+
+    try {
+        const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+        logger("SUCCESS SENDING MAIL");
+        logger(data);
+    } catch (error) {
+        logger("ERROR SENDING MAIL");
+        logger(error);
+    }
 }
