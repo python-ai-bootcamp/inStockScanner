@@ -1,5 +1,4 @@
 import Mailjet from 'node-mailjet';
-import { readFileSync } from 'fs';
 
 export async function sendNotification({ logger, recipients, sender, subject, structuredContent, textContent, key }) {
     const mailjet = Mailjet.apiConnect(

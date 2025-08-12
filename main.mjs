@@ -113,20 +113,25 @@ if (results.length > 0) {
   const textContent = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
   const structuredContent = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
 
-  for (const providerConfig of notificationProviders) {
+  for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
     logger(`sending notification for ${providerConfig.provider}`)
-    const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
-    const notificationProvider = await import(providerPath.href);
-    await notificationProvider.sendNotification({
-      logger,
-      recipients: providerConfig.recipients,
-      sender: providerConfig.sender,
-      subject,
-      structuredContent,
-      textContent,
-      key: providerConfig.key
-    });
-    logger(`notification sent for ${providerConfig.provider}`)
+    try{
+      const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
+      const notificationProvider = await import(providerPath.href);
+      await notificationProvider.sendNotification({
+        logger,
+        recipients: providerConfig.recipients,
+        sender: providerConfig.sender,
+        subject,
+        structuredContent,
+        textContent,
+        key: providerConfig.key
+      });
+      logger(`notification sent for ${providerConfig.provider}`)
+    } catch (error) {
+      logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");
+      logger(error.stack || error);
+    }
   }
 } else {
   logger("No results found, skipping notifications");
