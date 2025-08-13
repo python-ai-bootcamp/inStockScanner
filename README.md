@@ -8,7 +8,6 @@ A Node.js-based web scraper that automatically checks a list of websites for pro
 *   **Multiple Notification Providers:** Send notifications through different channels like email, log files, or your own custom providers.
 *   **Enable/Disable Providers:** Easily enable or disable notification providers from the configuration file.
 *   **Refractory Period:** Avoids spamming notifications by implementing a "refractory period" for each product, preventing repeated notifications for a set amount of time.
-*   **Invalidate Refractory Periods:** A command-line flag allows you to reset the refractory periods for all products.
 *   **Customizable Success Conditions:** Define what "in stock" means for each product using XPath expressions and success conditions.
 *   **Automated Scheduling:** Includes scripts for easy setup of scheduled tasks on both Windows and Linux.
 *   **Uninstallation Scripts:** Includes scripts to easily remove the scheduled tasks.
@@ -157,14 +156,14 @@ export async function sendNotification({ logger, recipients, sender, subject, te
 
 ### Creating a Custom Validator
 
-The validation system is inherently extensible through the `configuration/validations.json` file. You can create a new validator by simply adding a new object to the array in this file.
+The validation system is inherently extensible through the `configuration/validations.json` file. You can create a new validator by simply adding a new object to the array in this file. Each validator object has several key fields:
 
-The power of the validator system comes from the combination of `xpath` and `successCondition`:
+*   `url`: The full URL of the product page to check.
+*   `xpath`: An XPath expression used to find a specific element on the page. You can use your browser's developer tools to find the XPath of the element you want to check (e.g., an "out of stock" message).
+*   `successCondition`: A JavaScript expression that is evaluated against the number of nodes found by the `xpath`. This is what determines if the product is "in stock". For example:
+    *   `==0`: Success if the element is *not* found (e.g., the "out of stock" message is missing).
+    *   `>0`: Success if the element *is* found (e.g., an "add to cart" button is present).
+*   `enabled`: A boolean (`true` or `false`) that allows you to easily enable or disable checking for this specific product without removing it from the configuration.
+*   `refactoryPeriod_hour`: An integer representing the number of hours the script will wait before sending another notification for this product after a successful check. This prevents spam.
 
-*   **`xpath`**: This is a powerful way to select any element on a web page. You can use your browser's developer tools to find the XPath of the element you want to check.
-*   **`successCondition`**: This is a JavaScript expression that is evaluated against the number of nodes found by the `xpath`. This allows for a great deal of flexibility. For example:
-    *   `==0`: Success if the element is *not* found (e.g., an "out of stock" message).
-    *   `>0`: Success if the element *is* found (e.g., an "in stock" message).
-    *   `==1`: Success if exactly one element is found.
-
-By combining these two fields, you can create a validator for almost any website.
+By combining these fields, you can create a highly specific and customized validator for almost any website.
