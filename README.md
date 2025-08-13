@@ -1,13 +1,18 @@
 # Website Availability Checker
 
-This project is a Node.js-based web scraper that automatically checks a list of websites for product availability and sends email notifications when a product is back in stock.
+A Node.js-based web scraper that automatically checks a list of websites for product availability and sends notifications through various channels when a product is back in stock.
 
 ## Features
 
 *   **Configurable Product Checks:** Easily configure which products to check via a simple JSON file.
-*   **Email Notifications:** Uses Mailjet to send email notifications to a configurable list of recipients when a product is found to be in stock.
-*   **Refactory Period:** Avoids spamming notifications by implementing a "refactory period" for each product, preventing repeated notifications for a set amount of time.
+*   **Multiple Notification Providers:** Send notifications through different channels like email, log files, or your own custom providers.
+*   **Enable/Disable Providers:** Easily enable or disable notification providers from the configuration file.
+*   **Refractory Period:** Avoids spamming notifications by implementing a "refractory period" for each product, preventing repeated notifications for a set amount of time.
+*   **Invalidate Refractory Periods:** A command-line flag allows you to reset the refractory periods for all products.
 *   **Customizable Success Conditions:** Define what "in stock" means for each product using XPath expressions and success conditions.
+*   **Automated Scheduling:** Includes scripts for easy setup of scheduled tasks on both Windows and Linux.
+*   **Uninstallation Scripts:** Includes scripts to easily remove the scheduled tasks.
+*   **Extensible:** Designed to be easily extended with new notification providers and validators.
 
 ## Prerequisites
 
@@ -26,53 +31,39 @@ This project is a Node.js-based web scraper that automatically checks a list of 
 
 All configuration files must be placed in the `configuration/` directory.
 
-### 1. Notification Providers (`configuration/notificationProviders.json`)
+### `notificationProviders.json`
 
-The `configuration/notificationProviders.json` file contains an array of notification providers to use. This allows for sending notifications through multiple channels (e.g., multiple email providers).
+This file contains an array of notification providers to use. This allows for sending notifications through multiple channels. Each object in the array represents a provider and has an `enabled` flag to easily turn it on or off.
 
-Each object in the array should have the following properties:
-
-*   `provider`: The name of the provider module located in the `providers/` directory (e.g., `mailjet.mjs`).
-*   `key`: An object containing the API key and secret for the provider. For Mailjet, this would be `{"key": "YOUR_API_KEY", "secret": "YOUR_SECRET"}`.
-*   `recipients`: An array of recipient objects, each with `Email` and `Name` properties.
-*   `sender`: An object with `Email` and `Name` properties for the sender.
-
-**Example `configuration/notificationProviders.json`:**
-
+**Example:**
 ```json
 [
   {
+    "enabled": true,
     "provider": "mailjet.mjs",
-    "key": {
-      "key": "YOUR_MAILJET_API_KEY",
-      "secret": "YOUR_MAILJET_API_SECRET"
-    },
-    "recipients": [
-      {
-        "Email": "recipient1@example.com",
-        "Name": "Recipient One"
-      }
-    ],
-    "sender": {
-      "Email": "sender@example.com",
-      "Name": "Website Availability Checker"
-    }
+    "key": { "key": "YOUR_API_KEY", "secret": "YOUR_SECRET" },
+    "recipients": [{ "Email": "recipient@example.com", "Name": "Recipient" }],
+    "sender": { "Email": "sender@example.com", "Name": "Availability Checker" }
+  },
+  {
+    "enabled": false,
+    "provider": "logfile.mjs",
+    "recipients": [{ "filename": "./notifications.log" }]
   }
 ]
 ```
 
-### 2. Products to Check (`configuration/validations.json`)
+### `validations.json`
 
-The `configuration/validations.json` file contains an array of products to monitor.
+This file contains an array of products to monitor.
 
 *   `url`: The URL of the product page.
-*   `xpath`: An XPath expression to select an element on the page. This is typically used to find an "out of stock" message.
-*   `successCondition`: A JavaScript condition that evaluates to `true` when the product is considered in stock. The condition is evaluated against the number of nodes found by the `xpath`. For example, if the `xpath` points to an "out of stock" message, the `successCondition` would be `==0`, meaning success is when the message is not found.
-*   `enabled`: Set to `true` to enable the check for this product, or `false` to disable it.
-*   `refactoryPeriod_hour`: The number of hours to wait before sending another notification for this product after it's found to be in stock.
+*   `xpath`: An XPath expression to select an element on the page.
+*   `successCondition`: A JavaScript condition that evaluates to `true` when the product is in stock.
+*   `enabled`: Set to `true` to enable the check for this product.
+*   `refactoryPeriod_hour`: The number of hours to wait before sending another notification.
 
-**Example `configuration/validations.json`:**
-
+**Example:**
 ```json
 [
   {
@@ -87,46 +78,93 @@ The `configuration/validations.json` file contains an array of products to monit
 
 ## Usage
 
-To run the script, use the following command:
+### Running the Checker
 
+To run the script manually:
 ```bash
 node main.mjs
 ```
 
-The script will log its progress to the console and to a `log.txt` file.
+### Invalidating Refractory Periods
 
-## Scheduling the Checker
+To reset the refractory period for all products, run the script with the `--invalidate-refractory-periods` flag:
+```bash
+node main.mjs --invalidate-refractory-periods
+```
 
-To run the checker automatically on a schedule, you can use the provided installation scripts for Windows and Linux.
+## Scheduling and Uninstallation
 
 ### Windows
 
-1.  Open PowerShell with **Administrator privileges** ("Run as Administrator").
+**Installation:**
+1.  Open PowerShell with **Administrator privileges**.
 2.  Navigate to the project's root directory.
-3.  Run the installation script:
-    ```powershell
-    .\install-task.ps1
-    ```
-    This will create a new scheduled task named "WebsiteAvailabilityChecker" that runs the `main.mjs` script every hour.
+3.  Run the installation script: `.\install-task.ps1`
+
+**Uninstallation:**
+1.  Open PowerShell with **Administrator privileges**.
+2.  Navigate to the project's root directory.
+3.  Run the uninstallation script: `.\uninstall-task.ps1`
 
 ### Linux
 
+**Installation:**
 1.  Open your terminal.
 2.  Navigate to the project's root directory.
-3.  Make the installation script executable:
-    ```bash
-    chmod +x install-task.sh
-    ```
-4.  Run the script:
-    ```bash
-    ./install-task.sh
-    ```
-    This will add a cron job that runs the `main.mjs` script at the beginning of every hour. The output of the script will be logged to `cron.log` in the project directory.
+3.  Make the installation script executable: `chmod +x install-task.sh`
+4.  Run the script: `./install-task.sh`
 
-## How It Works
+**Uninstallation:**
+1.  Open your terminal.
+2.  Navigate to the project's root directory.
+3.  Run the script: `./uninstall-task.sh`
 
-The script uses `puppeteer` to launch a headless Chrome browser and navigate to the URLs specified in `configuration/validations.json`. For each URL, it uses the provided `xpath` to count the number of matching elements on the page. It then evaluates the `successCondition` to determine if the product is in stock.
+## Extensibility
 
-If a product is in stock and not within its refactory period, it is added to a list of available products. After checking all products, if this list is not empty, the script uses the Mailjet API to send an email to all recipients in `configuration/mailRecipients.json`.
+This tool is designed to be highly extensible, allowing you to easily add your own notification providers and validation logic.
 
-The `configuration/refactoryPeriods.json` file is automatically created and managed by the script to keep track of when a notification was last sent for each product, ensuring you don't get duplicate alerts.
+### Creating a Custom Notification Provider
+
+To create a new notification provider, you need to:
+
+1.  Create a new `.mjs` file in the `providers/` directory.
+2.  This file must export an async function named `sendNotification`.
+3.  The `sendNotification` function will receive an object with the following properties:
+    *   `logger`: The logger instance.
+    *   `recipients`: The `recipients` array from your provider's configuration.
+    *   `sender`: The `sender` object from your provider's configuration.
+    *   `subject`: The notification subject line.
+    *   `structuredContent`: The HTML content of the notification.
+    *   `textContent`: The plain text content of the notification.
+    *   `key`: The `key` object from your provider's configuration.
+
+**Template:**
+```javascript
+// providers/my-custom-provider.mjs
+
+export async function sendNotification({ logger, recipients, sender, subject, textContent, key }) {
+  logger('MyCustomProvider::sendNotification - Entered');
+  try {
+    // Your notification logic here
+    logger('MyCustomProvider::sendNotification - Success');
+  } catch (error) {
+    logger('MyCustomProvider::sendNotification - ERROR');
+    logger(error);
+  }
+}
+```
+4.  Configure your new provider in `configuration/notificationProviders.json`.
+
+### Creating a Custom Validator
+
+The validation system is inherently extensible through the `configuration/validations.json` file. You can create a new validator by simply adding a new object to the array in this file.
+
+The power of the validator system comes from the combination of `xpath` and `successCondition`:
+
+*   **`xpath`**: This is a powerful way to select any element on a web page. You can use your browser's developer tools to find the XPath of the element you want to check.
+*   **`successCondition`**: This is a JavaScript expression that is evaluated against the number of nodes found by the `xpath`. This allows for a great deal of flexibility. For example:
+    *   `==0`: Success if the element is *not* found (e.g., an "out of stock" message).
+    *   `>0`: Success if the element *is* found (e.g., an "in stock" message).
+    *   `==1`: Success if exactly one element is found.
+
+By combining these two fields, you can create a validator for almost any website.
