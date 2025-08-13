@@ -34,22 +34,50 @@ All configuration files must be placed in the `configuration/` directory.
 
 This file contains an array of notification providers to use. This allows for sending notifications through multiple channels. Each object in the array represents a provider and has an `enabled` flag to easily turn it on or off.
 
-**Example:**
+**Examples:**
+
+Below are examples for all the built-in providers. You can mix and match them in the `notificationProviders.json` array.
+
+**Mailjet (Email):**
 ```json
-[
-  {
-    "enabled": true,
-    "provider": "mailjet.mjs",
-    "key": { "key": "YOUR_API_KEY", "secret": "YOUR_SECRET" },
-    "recipients": [{ "Email": "recipient@example.com", "Name": "Recipient" }],
-    "sender": { "Email": "sender@example.com", "Name": "Availability Checker" }
-  },
-  {
-    "enabled": false,
-    "provider": "logfile.mjs",
-    "recipients": [{ "filename": "./notifications.log" }]
-  }
-]
+{
+  "enabled": true,
+  "provider": "mailjet.mjs",
+  "key": { "key": "YOUR_MAILJET_API_KEY", "secret": "YOUR_MAILJET_API_SECRET" },
+  "recipients": [{ "Email": "recipient@example.com", "Name": "Recipient" }],
+  "sender": { "Email": "sender@example.com", "Name": "Availability Checker" }
+}
+```
+
+**Brevo (Email):**
+```json
+{
+  "enabled": true,
+  "provider": "brevo.mjs",
+  "key": "YOUR_BREVO_API_KEY",
+  "recipients": [{ "email": "recipient@example.com", "name": "Recipient" }],
+  "sender": { "email": "sender@example.com", "name": "Availability Checker" }
+}
+```
+
+**Twilio (WhatsApp):**
+```json
+{
+  "enabled": true,
+  "provider": "twilioWhatsApp.mjs",
+  "key": { "accountSid": "YOUR_TWILIO_ACCOUNT_SID", "authToken": "YOUR_TWILIO_AUTH_TOKEN" },
+  "recipients": [{ "to": "whatsapp:+15551234567" }],
+  "sender": { "from": "whatsapp:+14155238886" }
+}
+```
+
+**Log File:**
+```json
+{
+  "enabled": true,
+  "provider": "logfile.mjs",
+  "recipients": [{ "filename": "./notifications.log" }]
+}
 ```
 
 ### `validations.json`
