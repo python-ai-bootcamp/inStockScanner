@@ -47,6 +47,20 @@ function logger(logLine) {
 
 logger(validations);
 
+for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
+  try{
+    const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
+    const notificationProvider = await import(providerPath.href);
+    await notificationProvider.authenticate({
+      key: providerConfig.key
+    });
+    logger(`authentication executed for ${providerConfig.provider}`)
+  } catch (error) {
+    logger(`!!! CRITICAL ERROR in authenticating for ${providerConfig.provider} provider !!!`);
+    logger(error.stack || error);
+  }
+}
+
 const scanProducts = async function(){
   logger("scanProducts:: entered");
   let browser;

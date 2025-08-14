@@ -49,3 +49,9 @@ Content: ${textContent}
         logger(error);
     }
 }
+
+export async function authenticate({key}) {
+    // logfile provider does not need any authentication step
+    // This is a placeholder for future providers that might need it
+    return;
+}
