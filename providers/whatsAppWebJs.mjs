@@ -13,6 +13,10 @@ export async function sendNotification({ logger, recipients, textContent }) {
             logger(`Failed to send WhatsApp message to ${recipient.phoneNumber}:`, error);
         }
     }
+    // Add a delay to ensure message is sent before client disconnects.
+    logger('Waiting 5 seconds to allow message to be sent...');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    logger('Delay finished.');
 }
 
 export function initialize({ key }) {
