@@ -51,12 +51,12 @@ for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
   try{
     const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
     const notificationProvider = await import(providerPath.href);
-    await notificationProvider.authenticate({
+    await notificationProvider.initialize({
       key: providerConfig.key
     });
-    logger(`authentication executed for ${providerConfig.provider}`)
+    logger(`initialization executed for ${providerConfig.provider}`)
   } catch (error) {
-    logger(`!!! CRITICAL ERROR in authenticating for ${providerConfig.provider} provider !!!`);
+    logger(`!!! CRITICAL ERROR in initializing for ${providerConfig.provider} provider !!!`);
     logger(error.stack || error);
   }
 }
@@ -147,7 +147,9 @@ if (results.length > 0) {
         textContent,
         key: providerConfig.key
       });
-      logger(`notification sent for ${providerConfig.provider}`)
+      logger(`notification sent for ${providerConfig.provider}`);
+      await notificationProvider.disconnect();
+      logger(`disconnected from ${providerConfig.provider}`);
     } catch (error) {
       logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");
       logger(error.stack || error);

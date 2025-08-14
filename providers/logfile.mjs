@@ -50,8 +50,12 @@ Content: ${textContent}
     }
 }
 
-export async function authenticate({key}) {
-    // logfile provider does not need any authentication step
-    // This is a placeholder for future providers that might need it
+export async function initialize({key}) {
+    // logfile provider does not need any initialization step
+    return;
+}
+
+export async function disconnect() {
+    // logfile provider does not need any disconnect step
     return;
 }
