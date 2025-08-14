@@ -29,8 +29,12 @@ export async function sendNotification({ logger, recipients, sender, subject, st
     }
 }
 
-export async function authenticate({key}) {
-    // mailjet provider does not need any authentication step
-    // This is a placeholder for future providers that might need it
+export async function initialize({key}) {
+    // mailjet provider does not need any initialization step
+    return;
+}
+
+export async function disconnect() {
+    // mailjet provider does not need any disconnect step
     return;
 }

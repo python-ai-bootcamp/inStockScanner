@@ -26,8 +26,12 @@ export async function sendNotification({ logger, recipients, sender, textContent
     }
 }
 
-export async function authenticate({key}) {
-    // twilioWhatsApp provider does not need any authentication step
-    // This is a placeholder for future providers that might need it
+export async function initialize({key}) {
+    // twilioWhatsApp provider does not need any initialization step
+    return;
+}
+
+export async function disconnect() {
+    // twilioWhatsApp provider does not need any disconnect step
     return;
 }
