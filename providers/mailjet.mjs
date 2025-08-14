@@ -28,3 +28,9 @@ export async function sendNotification({ logger, recipients, sender, subject, st
         logger(err.statusCode);
     }
 }
+
+export async function authenticate({key}) {
+    // mailjet provider does not need any authentication step
+    // This is a placeholder for future providers that might need it
+    return;
+}

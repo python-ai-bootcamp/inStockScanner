@@ -22,3 +22,9 @@ export async function sendNotification({ logger, recipients, sender, subject, st
         logger(error);
     }
 }
+
+export async function authenticate({key}) {
+  // Brevo provider does not need any authentication step
+  // This is a placeholder for future providers that might need it
+  return;
+}
