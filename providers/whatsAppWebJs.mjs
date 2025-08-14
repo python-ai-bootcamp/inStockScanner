@@ -1,4 +1,5 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
+import mjs from 'whatsapp-web.js';
+const { Client, LocalAuth  } = mjs;
 import qrcode from 'qrcode-terminal';
 
 let client;
