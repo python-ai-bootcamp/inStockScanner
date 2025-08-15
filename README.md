@@ -1,4 +1,4 @@
-# Website Availability Checker
+# Website Stock Item Availability Checker
 
 A Node.js-based web scraper that automatically checks a list of websites for product availability and sends notifications through various channels when a product is back in stock.
 
@@ -56,21 +56,27 @@ This file should contain a single JSON array. You can include and combine config
   },
   {
     "enabled": false,
-    "provider": "twilioWhatsApp.mjs",
+    "provider": "whatsAppTwilio.mjs",
     "key": { "accountSid": "YOUR_TWILIO_ACCOUNT_SID", "authToken": "YOUR_TWILIO_AUTH_TOKEN" },
     "recipients": [{ "to": "whatsapp:+15551234567" }],
     "sender": { "from": "whatsapp:+14155238886" }
-  },
-  {
-    "enabled": true,
-    "provider": "logfile.mjs",
-    "recipients": [{ "filename": "./notifications.log" }]
   },
   {
     "enabled": false,
     "provider": "whatsAppWebJs.mjs",
     "key": { "phone": "YOUR_PHONE_NUMBER_WITH_COUNTRY_CODE" },
     "recipients": [{ "phoneNumber": "RECIPIENT_PHONE_NUMBER_WITH_COUNTRY_CODE" }]
+  },
+  {
+    "enabled": false,
+    "provider": "whatsAppBaileys.mjs",
+    "key": { "phone": "YOUR_PHONE_NUMBER_WITH_COUNTRY_CODE" },
+    "recipients": [{ "phoneNumber": "RECIPIENT_PHONE_NUMBER_WITH_COUNTRY_CODE" }]
+  },
+  {
+    "enabled": true,
+    "provider": "logfile.mjs",
+    "recipients": [{ "filename": "./notifications.log" }]
   }
 ]
 ```
