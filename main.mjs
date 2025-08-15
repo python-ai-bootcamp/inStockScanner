@@ -149,8 +149,6 @@ if (results.length > 0) {
         key: providerConfig.key
       });
       logger(`notification sent for ${providerConfig.provider}`);
-      await notificationProvider.disconnect({logger});
-      logger(`disconnected from ${providerConfig.provider}`);
     } catch (error) {
       logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");
       logger(error.stack || error);
@@ -158,4 +156,17 @@ if (results.length > 0) {
   }
 } else {
   logger("No results found, skipping notifications");
+}
+
+for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
+  try{
+    logger(`disconnecting from ${providerConfig.provider}`);
+    const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
+    const notificationProvider = await import(providerPath.href);
+    await notificationProvider.disconnect({logger});
+    logger(`disconnected from ${providerConfig.provider}`);
+  } catch (error) {
+    logger(`!!! CRITICAL ERROR in disconnection for ${providerConfig.provider} provider !!!`);
+    logger(error.stack || error);
+  }
 }
