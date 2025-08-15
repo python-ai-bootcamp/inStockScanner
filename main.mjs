@@ -52,7 +52,8 @@ for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
     const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
     const notificationProvider = await import(providerPath.href);
     await notificationProvider.initialize({
-      key: providerConfig.key
+      key: providerConfig.key,
+      logger
     });
     logger(`initialization executed for ${providerConfig.provider}`)
   } catch (error) {
