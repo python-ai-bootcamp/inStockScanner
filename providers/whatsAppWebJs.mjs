@@ -2,6 +2,7 @@ import mjs from 'whatsapp-web.js';
 const { Client, LocalAuth  } = mjs;
 import qrcode from 'qrcode-terminal';
 import path from 'path';
+import { executablePath } from 'puppeteer';
 
 let client;
 
@@ -27,14 +28,16 @@ export function initialize({ key, logger }) {
       logger('Initializing WhatsApp Web JS client...');
       // Use phone number as a unique ID to support multiple sessions
       const clientId = key.phone.split('@')[0];
+      const userDataDir = path.resolve('./configuration/whatsapp-web.js.cache');
       client = new Client({
           puppeteer: {
-              executablePath: 'C:\\code\\inStockScanner\\node_modules\\puppeteer-core\\.local-chromium\\win64-1045629\\chrome-win\\chrome.exe',
+              executablePath: executablePath(),
+              userDataDir: userDataDir,
               args: ['--no-sandbox', '--disable-setuid-sandbox'],
           },
           authStrategy: new LocalAuth({
               clientId: clientId,
-              dataPath: path.resolve('./configuration/whatsapp-web.js.cache')
+              dataPath: userDataDir
           })
       });
 
