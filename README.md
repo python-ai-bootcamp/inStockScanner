@@ -65,9 +65,17 @@ This file should contain a single JSON array. You can include and combine config
     "enabled": true,
     "provider": "logfile.mjs",
     "recipients": [{ "filename": "./notifications.log" }]
+  },
+  {
+    "enabled": false,
+    "provider": "whatsAppWebJs.mjs",
+    "key": { "phone": "YOUR_PHONE_NUMBER_WITH_COUNTRY_CODE" },
+    "recipients": [{ "phoneNumber": "RECIPIENT_PHONE_NUMBER_WITH_COUNTRY_CODE" }]
   }
 ]
 ```
+
+**Note on `whatsAppWebJs.mjs`:** The first time you run the application with this provider enabled, you will need to scan a QR code in your terminal to log in to WhatsApp Web. A session file will be created in `configuration/.puppeteer_cache` to keep you logged in.
 
 ### `validations.json`
 
@@ -141,24 +149,47 @@ This tool is designed to be highly extensible, allowing you to easily add your o
 
 ### Creating a Custom Notification Provider
 
-To create a new notification provider, you need to:
+To create a new notification provider, you need to create a new `.mjs` file in the `providers/` directory. This file must export three async functions: `initialize`, `sendNotification`, and `disconnect`.
 
-1.  Create a new `.mjs` file in the `providers/` directory.
-2.  This file must export an async function named `sendNotification`.
-3.  The `sendNotification` function will receive an object with the following properties:
-    *   `logger`: The logger instance.
-    *   `recipients`: The `recipients` array from your provider's configuration.
-    *   `sender`: The `sender` object from your provider's configuration.
-    *   `subject`: The notification subject line.
-    *   `structuredContent`: The HTML content of the notification.
-    *   `textContent`: The plain text content of the notification.
-    *   `key`: The `key` object from your provider's configuration.
+1.  **`initialize(params)`**: This function is called once when the application starts. It's the place to perform any setup for your provider, such as authentication or connecting to a service. It receives an object with `logger` and `key` properties.
+
+2.  **`sendNotification(params)`**: This function is called when a notification needs to be sent. It receives an object containing the notification details, such as `recipients`, `subject`, and `textContent`.
+
+3.  **`disconnect(params)`**: This function is called when the application is about to exit. It's the place to perform any cleanup tasks, like logging out or closing a connection. It receives a `logger` object.
 
 **Template:**
 ```javascript
 // providers/my-custom-provider.mjs
 
-export async function sendNotification({ logger, recipients, sender, subject, textContent, key }) {
+/**
+ * Initializes the provider.
+ * @param {object} params - The parameters.
+ * @param {function} params.logger - The logger instance.
+ * @param {object} params.key - The key from the provider's configuration.
+ */
+export async function initialize({ logger, key }) {
+  logger('MyCustomProvider::initialize - Entered');
+  try {
+    // Your initialization logic here (e.g., authentication)
+    logger('MyCustomProvider::initialize - Success');
+  } catch (error) {
+    logger('MyCustomProvider::initialize - ERROR');
+    logger(error);
+  }
+}
+
+/**
+ * Sends a notification.
+ * @param {object} params - The parameters.
+ * @param {function} params.logger - The logger instance.
+ * @param {array} params.recipients - The recipients from the provider's configuration.
+ * @param {object} params.sender - The sender from the provider's configuration.
+ * @param {string} params.subject - The notification subject.
+ * @param {string} params.textContent - The plain text content of the notification.
+ * @param {string} params.structuredContent - The HTML content of the notification.
+ * @param {object} params.key - The key from the provider's configuration.
+ */
+export async function sendNotification({ logger, recipients, sender, subject, textContent, structuredContent, key }) {
   logger('MyCustomProvider::sendNotification - Entered');
   try {
     // Your notification logic here
@@ -168,8 +199,25 @@ export async function sendNotification({ logger, recipients, sender, subject, te
     logger(error);
   }
 }
+
+/**
+ * Disconnects the provider.
+ * @param {object} params - The parameters.
+ * @param {function} params.logger - The logger instance.
+ */
+export async function disconnect({ logger }) {
+  logger('MyCustomProvider::disconnect - Entered');
+  try {
+    // Your disconnection logic here (e.g., logging out)
+    logger('MyCustomProvider::disconnect - Success');
+  } catch (error) {
+    logger('MyCustomProvider::disconnect - ERROR');
+    logger(error);
+  }
+}
 ```
-4.  Configure your new provider in `configuration/notificationProviders.json`.
+
+After creating your provider, you need to configure it in `configuration/notificationProviders.json`.
 
 ### Creating a Custom Validator
 
