@@ -28,16 +28,16 @@ export function initialize({ key, logger }) {
       logger('Initializing WhatsApp Web JS client...');
       // Use phone number as a unique ID to support multiple sessions
       const clientId = key.phone.split('@')[0];
-      const userDataDir = path.resolve('./configuration/whatsapp-web.js.cache');
+      //const userDataDir = path.resolve('./configuration/whatsapp-web.js.cache');
       client = new Client({
           puppeteer: {
               executablePath: executablePath(),
-              userDataDir: userDataDir,
+              //userDataDir: userDataDir,
               args: ['--no-sandbox', '--disable-setuid-sandbox'],
           },
           authStrategy: new LocalAuth({
-              clientId: clientId,
-              dataPath: userDataDir
+              clientId: clientId//,
+              //dataPath: userDataDir
           })
       });
 
