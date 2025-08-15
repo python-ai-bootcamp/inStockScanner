@@ -58,9 +58,9 @@ export async function sendNotification({ logger, recipients, textContent }) {
 export async function disconnect({ logger }) {
   if (sock) {
     try {
-      await sock.logout();
+      sock.end();
       sock = null;
-      logger('Baileys client disconnected and logged out.');
+      logger('Baileys client disconnected.');
     } catch(err) {
       logger('Failed to disconnect Baileys client:', err);
       throw err;
