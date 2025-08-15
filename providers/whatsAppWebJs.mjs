@@ -1,8 +1,6 @@
 import mjs from 'whatsapp-web.js';
 const { Client, LocalAuth  } = mjs;
 import qrcode from 'qrcode-terminal';
-import { executablePath } from 'puppeteer';
-import { resolve } from 'path';
 
 let client;
 
@@ -22,18 +20,14 @@ export async function sendNotification({ logger, recipients, textContent }) {
     logger('Delay finished.');
 }
 
-export function initialize({ key }) {
+export function initialize({ key, browser }) {
   return new Promise((resolve, reject) => {
     console.log('Initializing WhatsApp Web JS client...');
     // Use phone number as a unique ID to support multiple sessions
     const clientId = key.phone.split('@')[0];
-    const userDataDir = resolve(process.cwd(), '.puppeteer_whatsapp_cache');
-    const execPath = executablePath();
     client = new Client({
         puppeteer: {
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            userDataDir: userDataDir,
-            executablePath: execPath
+            browserWSEndpoint: browser.wsEndpoint()
         },
         authStrategy: new LocalAuth({
             clientId: clientId,
@@ -72,8 +66,8 @@ export function initialize({ key }) {
 
 export async function disconnect() {
   if (client) {
-    await client.destroy();
+    await client.logout();
     client = null;
-    console.log('WhatsApp Web JS client disconnected and destroyed.');
+    console.log('WhatsApp Web JS client logged out.');
   }
 }

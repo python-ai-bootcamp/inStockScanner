@@ -47,35 +47,10 @@ function logger(logLine) {
 
 logger(validations);
 
-for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
-  try{
-    const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
-    const notificationProvider = await import(providerPath.href);
-    await notificationProvider.initialize({
-      key: providerConfig.key
-    });
-    logger(`initialization executed for ${providerConfig.provider}`)
-  } catch (error) {
-    logger(`!!! CRITICAL ERROR in initializing for ${providerConfig.provider} provider !!!`);
-    logger(error.stack || error);
-  }
-}
-
-const scanProducts = async function(){
+const scanProducts = async function(browser){
   logger("scanProducts:: entered");
-  let browser;
   try {
     const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)));
-    const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
-    logger(`Puppeteer will use user data directory: ${userDataDir}`);
-    const execPath = executablePath();
-    logger(`Puppeteer will use executable path: ${execPath}`);
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      userDataDir: userDataDir,
-      executablePath: execPath
-    });
     const page = await browser.newPage();
     const inStockResults=[]
 
@@ -117,6 +92,71 @@ const scanProducts = async function(){
     logger("!!! CRITICAL ERROR in scanProducts !!!");
     logger(error.stack || error);
     return []; // Return an empty array on error
+  }
+}
+
+async function main() {
+  let browser;
+  try {
+    const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
+    logger(`Puppeteer will use user data directory: ${userDataDir}`);
+    const execPath = executablePath();
+    logger(`Puppeteer will use executable path: ${execPath}`);
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      userDataDir: userDataDir,
+      executablePath: execPath
+    });
+
+    for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
+      try{
+        const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
+        const notificationProvider = await import(providerPath.href);
+        await notificationProvider.initialize({
+          key: providerConfig.key,
+          browser: browser
+        });
+        logger(`initialization executed for ${providerConfig.provider}`)
+      } catch (error) {
+        logger(`!!! CRITICAL ERROR in initializing for ${providerConfig.provider} provider !!!`);
+        logger(error.stack || error);
+      }
+    }
+
+    let results=await scanProducts(browser);
+    logger({message: "scan results", results});
+
+    if (results.length > 0) {
+      const subject = "The Hishook Results You Requested Were Found";
+      const textContent = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
+      const structuredContent = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
+
+      for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
+        logger(`sending notification for ${providerConfig.provider}`)
+        try{
+          const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
+          const notificationProvider = await import(providerPath.href);
+          await notificationProvider.sendNotification({
+            logger,
+            recipients: providerConfig.recipients,
+            sender: providerConfig.sender,
+            subject,
+            structuredContent,
+            textContent,
+            key: providerConfig.key
+          });
+          logger(`notification sent for ${providerConfig.provider}`);
+          await notificationProvider.disconnect();
+          logger(`disconnected from ${providerConfig.provider}`);
+        } catch (error) {
+          logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");
+          logger(error.stack || error);
+        }
+      }
+    } else {
+      logger("No results found, skipping notifications");
+    }
   } finally {
     if (browser) {
       await browser.close();
@@ -125,36 +165,7 @@ const scanProducts = async function(){
   }
 }
 
-let results=await scanProducts();
-logger({message: "scan results", results});
-
-if (results.length > 0) {
-  const subject = "The Hishook Results You Requested Were Found";
-  const textContent = `Daily monitored products on hahishook.com found inStock:\n${results.map(x=>x.split('/').filter(Boolean).pop()+"-->"+x+"\n")}`;
-  const structuredContent = `<h3>Daily monitored products on hahishook.com found inStock:</h3><br/><ul>${results.map(x=>'<li>'+'<a href="'+x+'">'+x.split('/').filter(Boolean).pop()+'</a></li>')}</ul>`;
-
-  for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
-    logger(`sending notification for ${providerConfig.provider}`)
-    try{
-      const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
-      const notificationProvider = await import(providerPath.href);
-      await notificationProvider.sendNotification({
-        logger,
-        recipients: providerConfig.recipients,
-        sender: providerConfig.sender,
-        subject,
-        structuredContent,
-        textContent,
-        key: providerConfig.key
-      });
-      logger(`notification sent for ${providerConfig.provider}`);
-      await notificationProvider.disconnect();
-      logger(`disconnected from ${providerConfig.provider}`);
-    } catch (error) {
-      logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");
-      logger(error.stack || error);
-    }
-  }
-} else {
-  logger("No results found, skipping notifications");
-}
+main().catch(error => {
+  logger("!!! CRITICAL ERROR in main execution !!!");
+  logger(error.stack || error);
+});
