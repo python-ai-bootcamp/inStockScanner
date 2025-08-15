@@ -1,5 +1,5 @@
 import mjs from 'whatsapp-web.js';
-const { Client, LocalAuth  } = mjs;
+const { Client } = mjs;
 import qrcode from 'qrcode-terminal';
 import path from 'path';
 import { executablePath } from 'puppeteer';
@@ -34,11 +34,7 @@ export function initialize({ key, logger }) {
               executablePath: executablePath(),
               userDataDir: userDataDir,
               args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          },
-          authStrategy: new LocalAuth({
-              clientId: clientId,
-              dataPath: userDataDir
-          })
+          }
       });
 
       client.once('ready', () => {
