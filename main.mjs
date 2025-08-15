@@ -67,7 +67,7 @@ const scanProducts = async function(){
   let browser;
   try {
     const urlMaxLength=Math.max(...(validations.map(x=>x.url).map(x=>x.length)));
-    const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
+    const userDataDir = resolve(process.cwd(), 'configuration','.puppeteer_cache');
     logger(`Puppeteer will use user data directory: ${userDataDir}`);
     const execPath = executablePath();
     logger(`Puppeteer will use executable path: ${execPath}`);
