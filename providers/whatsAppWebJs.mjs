@@ -10,7 +10,7 @@ export async function sendNotification({ logger, recipients, textContent }) {
     logger(`Sending WhatsApp notification to: ${recipients.map(r => r.phoneNumber).join(', ')}`);
     for (const recipient of recipients) {
         try {
-            await client.sendMessage(recipient.phoneNumber, textContent);
+          await client.sendMessage(`${recipient.phoneNumber.replace(/\D/g, '')}@c.us`, textContent);
             logger(`Successfully sent WhatsApp message to ${recipient.phoneNumber}`);
         } catch (error) {
             logger(`Failed to send WhatsApp message to ${recipient.phoneNumber}:`, error);
@@ -26,7 +26,7 @@ export function initialize({ key, logger }) {
   return new Promise((resolve, reject) => {
     try {
       logger('Initializing WhatsApp Web JS client...');
-      const clientId = key.phone.split('@')[0];
+      const clientId = key.phoneNumber.replace(/\D/g, '');
       client = new Client({
           puppeteer: {
               executablePath: executablePath(),
