@@ -42,7 +42,7 @@ function str(val) {
 function logger(logLine) {
   const line = `[${new Date().toISOString()}]:: ${str(logLine)}\n`;
   appendFileSync(logPath, line);
-  console.log(logLine);
+  console.log(line);
 }
 
 logger(validations);
@@ -52,6 +52,7 @@ for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
     const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
     const notificationProvider = await import(providerPath.href);
     await notificationProvider.initialize({
+      logger,
       key: providerConfig.key
     });
     logger(`initialization executed for ${providerConfig.provider}`)
@@ -148,7 +149,7 @@ if (results.length > 0) {
         key: providerConfig.key
       });
       logger(`notification sent for ${providerConfig.provider}`);
-      await notificationProvider.disconnect();
+      await notificationProvider.disconnect({logger});
       logger(`disconnected from ${providerConfig.provider}`);
     } catch (error) {
       logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");

@@ -20,9 +20,9 @@ export async function sendNotification({ logger, recipients, textContent }) {
     logger('Delay finished.');
 }
 
-export function initialize({ key }) {
+export function initialize({ key, logger }) {
   return new Promise((resolve, reject) => {
-    console.log('Initializing WhatsApp Web JS client...');
+    logger('Initializing WhatsApp Web JS client...');
     // Use phone number as a unique ID to support multiple sessions
     const clientId = key.phone.split('@')[0];
     client = new Client({
@@ -36,38 +36,38 @@ export function initialize({ key }) {
     });
 
     client.once('ready', () => {
-        console.log('WhatsApp Web JS client is ready!');
+        logger('WhatsApp Web JS client is ready!');
         resolve();
     });
 
     client.on('qr', qr => {
-        console.log('QR code received, please scan:');
+        logger('QR code received, please scan:');
         qrcode.generate(qr, { small: true });
     });
 
     client.once('auth_failure', (msg) => {
-        console.error('WhatsApp Web JS authentication failure:', msg);
+        logger('WhatsApp Web JS authentication failure:', msg);
         reject(new Error('Authentication failure'));
     });
 
     client.once('disconnected', (reason) => {
-        console.log('WhatsApp Web JS client was disconnected:', reason);
+        logger('WhatsApp Web JS client was disconnected:', reason);
         reject(new Error('Client disconnected'));
     });
 
     client.initialize().catch(err => {
-      console.error('Failed to initialize WhatsApp Web JS client:', err);
+      logger('Failed to initialize WhatsApp Web JS client:', err);
       reject(err)
     });
 
-    console.log("WhatsApp Web JS client initialization process started.");
+    logger("WhatsApp Web JS client initialization process started.");
   });
 }
 
-export async function disconnect() {
+export async function disconnect({logger}) {
   if (client) {
     await client.destroy();
     client = null;
-    console.log('WhatsApp Web JS client disconnected and destroyed.');
+    logger('WhatsApp Web JS client disconnected and destroyed.');
   }
 }
