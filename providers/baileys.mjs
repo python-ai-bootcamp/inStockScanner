@@ -14,31 +14,33 @@ export async function initialize({ key, logger }) {
 
   sock = baileys.default({
     auth: authState,
-    printQRInTerminal: true,
   });
 
   sock.ev.on('creds.update', saveCreds);
 
   return new Promise((resolve, reject) => {
-    sock.ev.on('connection.update', (update) => {
+    const connectionUpdateListener = (update) => {
       const { connection, lastDisconnect, qr } = update;
       if (qr) {
         logger('QR code received, please scan:');
         qrcode.generate(qr, { small: true });
       }
-      if (connection === 'close') {
-        const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-        logger('Connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
-        if (shouldReconnect) {
-          initialize({ key, logger });
-        } else {
-          reject(new Error('Connection closed. You are logged out.'));
-        }
-      } else if (connection === 'open') {
+      if (connection === 'open') {
         logger('WhatsApp client is ready!');
+        sock.ev.removeListener('connection.update', connectionUpdateListener);
         resolve();
+      } else if (connection === 'close') {
+        const isLoggedOut = (lastDisconnect.error)?.output?.statusCode === DisconnectReason.loggedOut;
+        if (isLoggedOut) {
+          logger('Connection closed: Logged out. Please re-scan the QR code.');
+          sock.ev.removeListener('connection.update', connectionUpdateListener);
+          reject(new Error('Logged out'));
+        } else {
+            logger(`Connection closed due to ${lastDisconnect.error}, waiting for automatic reconnect...`);
+        }
       }
-    });
+    };
+    sock.ev.on('connection.update', connectionUpdateListener);
   });
 }
 
@@ -59,6 +61,9 @@ export async function disconnect({ logger }) {
   if (sock) {
     try {
       sock.end();
+      if (sock.ws && sock.ws.close) {
+        sock.ws.close();
+      }
       sock = null;
       logger('Baileys client disconnected.');
     } catch(err) {
