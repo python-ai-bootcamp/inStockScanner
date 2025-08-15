@@ -27,7 +27,7 @@ export function initialize({ key }) {
     console.log('Initializing WhatsApp Web JS client...');
     // Use phone number as a unique ID to support multiple sessions
     const clientId = key.phone.split('@')[0];
-    const userDataDir = resolve(process.cwd(), '.puppeteer_cache');
+    const userDataDir = resolve(process.cwd(), '.puppeteer_whatsapp_cache');
     const execPath = executablePath();
     client = new Client({
         puppeteer: {
