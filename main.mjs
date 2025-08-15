@@ -1,6 +1,6 @@
 import puppeteer, { executablePath } from 'puppeteer';
 import { createHash } from 'crypto';
-import { readFileSync, appendFileSync, writeFileSync} from 'fs';
+import { readFileSync, writeFileSync, createWriteStream} from 'fs';
 import { resolve } from 'path';
 import path from 'path';
 
@@ -29,7 +29,8 @@ const validations = JSON.parse(readFileSync('./configuration/validations.json', 
 const notificationProviders = JSON.parse(readFileSync('./configuration/notificationProviders.json', 'utf-8'));
 
 const logPath = './main.log';
-appendFileSync(logPath, `[${new Date().toISOString()}] Current dir: ${process.cwd()}\n`);
+const logStream = createWriteStream(logPath, { flags: 'a' });
+
 function str(val) {
   if (typeof val === 'string') return val;
   try {
@@ -41,9 +42,11 @@ function str(val) {
 
 function logger(logLine) {
   const line = `[${new Date().toISOString()}]:: ${str(logLine)}\n`;
-  appendFileSync(logPath, line);
+  logStream.write(line);
   console.log(logLine);
 }
+
+logger(`Current dir: ${process.cwd()}`);
 
 logger(validations);
 
