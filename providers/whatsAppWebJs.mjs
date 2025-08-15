@@ -13,7 +13,10 @@ export async function sendNotification({ logger, recipients, textContent }) {
             await client.sendMessage(recipient.phoneNumber, textContent);
             logger(`Successfully sent WhatsApp message to ${recipient.phoneNumber}`);
         } catch (error) {
-            logger(`Failed to send WhatsApp message to ${recipient.phoneNumber}:`, error);
+            logger({
+                message: `Failed to send WhatsApp message to ${recipient.phoneNumber}`,
+                error
+            });
         }
     }
     // Add a delay to ensure message is sent before client disconnects.
@@ -22,20 +25,28 @@ export async function sendNotification({ logger, recipients, textContent }) {
     logger('Delay finished.');
 }
 
-export function initialize({ key, logger }) {
+export function initialize({ key, logger, browserWSEndpoint }) {
   return new Promise((resolve, reject) => {
     logger('Initializing WhatsApp Web JS client...');
     // Use phone number as a unique ID to support multiple sessions
     const clientId = key.phone.split('@')[0];
     const userDataDir = resolve(process.cwd(), '.puppeteer_whatsapp_cache');
     const execPath = executablePath();
+
+    const puppeteerOptions = {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: execPath,
+        userDataDir: userDataDir
+    };
+
+    if (browserWSEndpoint) {
+        logger(`Connecting to existing browser at ${browserWSEndpoint}`);
+        puppeteerOptions.browserWSEndpoint = browserWSEndpoint;
+    }
+
     client = new Client({
-        puppeteer: {
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            executablePath: execPath,
-            userDataDir: userDataDir
-        },
+        puppeteer: puppeteerOptions,
         authStrategy: new LocalAuth({
             clientId: clientId,
             dataPath: './configuration/whatsapp-web.js.cache'
@@ -63,7 +74,10 @@ export function initialize({ key, logger }) {
     });
 
     client.initialize().catch(err => {
-      logger(`Failed to initialize WhatsApp Web JS client: ${err}`);
+      logger({
+          message: 'Failed to initialize WhatsApp Web JS client',
+          error: err
+      });
       reject(err)
     });
 
