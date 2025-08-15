@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
+    "@whiskeysockets/baileys": "^6.7.5",
     "node-mailjet": "^6.0.9",
     "puppeteer": "^24.15.0",
     "qrcode-terminal": "^0.12.0",
