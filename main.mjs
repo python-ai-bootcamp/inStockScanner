@@ -1,6 +1,6 @@
 import puppeteer, { executablePath } from 'puppeteer';
 import { createHash } from 'crypto';
-import { readFileSync, writeFileSync, createWriteStream} from 'fs';
+import { readFileSync, appendFileSync, writeFileSync} from 'fs';
 import { resolve } from 'path';
 import path from 'path';
 
@@ -29,8 +29,7 @@ const validations = JSON.parse(readFileSync('./configuration/validations.json', 
 const notificationProviders = JSON.parse(readFileSync('./configuration/notificationProviders.json', 'utf-8'));
 
 const logPath = './main.log';
-const logStream = createWriteStream(logPath, { flags: 'a' });
-
+appendFileSync(logPath, `[${new Date().toISOString()}] Current dir: ${process.cwd()}\n`);
 function str(val) {
   if (typeof val === 'string') return val;
   try {
@@ -42,11 +41,9 @@ function str(val) {
 
 function logger(logLine) {
   const line = `[${new Date().toISOString()}]:: ${str(logLine)}\n`;
-  logStream.write(line);
+  appendFileSync(logPath, line);
   console.log(logLine);
 }
-
-logger(`Current dir: ${process.cwd()}`);
 
 logger(validations);
 
@@ -55,8 +52,7 @@ for (const providerConfig of notificationProviders.filter(x=>x.enabled)) {
     const providerPath = new URL(`./providers/${providerConfig.provider}`, import.meta.url);
     const notificationProvider = await import(providerPath.href);
     await notificationProvider.initialize({
-      key: providerConfig.key,
-      logger
+      key: providerConfig.key
     });
     logger(`initialization executed for ${providerConfig.provider}`)
   } catch (error) {

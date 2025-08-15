@@ -1,6 +1,8 @@
 import mjs from 'whatsapp-web.js';
 const { Client, LocalAuth  } = mjs;
 import qrcode from 'qrcode-terminal';
+import { executablePath } from 'puppeteer';
+import { resolve } from 'path';
 
 let client;
 
@@ -20,14 +22,19 @@ export async function sendNotification({ logger, recipients, textContent }) {
     logger('Delay finished.');
 }
 
-export function initialize({ key, logger }) {
+export function initialize({ key }) {
   return new Promise((resolve, reject) => {
-    logger('Initializing WhatsApp Web JS client...');
+    console.log('Initializing WhatsApp Web JS client...');
     // Use phone number as a unique ID to support multiple sessions
     const clientId = key.phone.split('@')[0];
+    const userDataDir = resolve(process.cwd(), '.puppeteer_whatsapp_cache');
+    const execPath = executablePath();
     client = new Client({
         puppeteer: {
+            headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: execPath,
+            userDataDir: userDataDir
         },
         authStrategy: new LocalAuth({
             clientId: clientId,
@@ -36,32 +43,31 @@ export function initialize({ key, logger }) {
     });
 
     client.once('ready', () => {
-        logger('WhatsApp Web JS client is ready!');
+        console.log('WhatsApp Web JS client is ready!');
         resolve();
     });
 
     client.on('qr', qr => {
-        logger('QR code received, please scan:');
+        console.log('QR code received, please scan:');
         qrcode.generate(qr, { small: true });
     });
 
     client.once('auth_failure', (msg) => {
-        logger(`WhatsApp Web JS authentication failure: ${msg}`);
+        console.error('WhatsApp Web JS authentication failure:', msg);
         reject(new Error('Authentication failure'));
     });
 
     client.once('disconnected', (reason) => {
-        logger(`WhatsApp Web JS client was disconnected: ${reason}`);
+        console.log('WhatsApp Web JS client was disconnected:', reason);
         reject(new Error('Client disconnected'));
     });
 
     client.initialize().catch(err => {
-      logger('Failed to initialize WhatsApp Web JS client:');
-      logger(err.stack || err);
+      console.error('Failed to initialize WhatsApp Web JS client:', err);
       reject(err)
     });
 
-    logger("WhatsApp Web JS client initialization process started.");
+    console.log("WhatsApp Web JS client initialization process started.");
   });
 }
 
@@ -69,6 +75,6 @@ export async function disconnect() {
   if (client) {
     await client.destroy();
     client = null;
-    logger('WhatsApp Web JS client disconnected and destroyed.');
+    console.log('WhatsApp Web JS client disconnected and destroyed.');
   }
 }
