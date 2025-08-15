@@ -64,10 +64,3 @@ export function initialize({ key, browser }) {
   });
 }
 
-export async function disconnect() {
-  if (client) {
-    await client.logout();
-    client = null;
-    console.log('WhatsApp Web JS client logged out.');
-  }
-}

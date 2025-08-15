@@ -147,8 +147,6 @@ async function main() {
             key: providerConfig.key
           });
           logger(`notification sent for ${providerConfig.provider}`);
-          await notificationProvider.disconnect();
-          logger(`disconnected from ${providerConfig.provider}`);
         } catch (error) {
           logger("!!! CRITICAL ERROR in sending mail for ${providerConfig.provider} provider !!!");
           logger(error.stack || error);
