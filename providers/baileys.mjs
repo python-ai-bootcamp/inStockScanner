@@ -7,41 +7,52 @@ let sock;
 let authState;
 
 export async function initialize({ key, logger }) {
-  const clientId = key.phone.split('@')[0];
-  const authFile = path.join('sessions', `baileys-${clientId}.json`);
-  const { state, saveCreds } = await useMultiFileAuthState(authFile);
-  authState = state;
+    let connected = false;
+    while(!connected) {
+        try {
+            const connectionPromise = new Promise(async (resolve, reject) => {
+                const clientId = key.phone.split('@')[0];
+                const authFile = path.join('sessions', `baileys-${clientId}.json`);
+                const { state, saveCreds } = await useMultiFileAuthState(authFile);
 
-  sock = baileys.default({
-    auth: authState,
-  });
+                sock = baileys.default({ auth: state });
+                sock.ev.on('creds.update', saveCreds);
 
-  sock.ev.on('creds.update', saveCreds);
+                const connectionUpdateListener = (update) => {
+                    const { connection, lastDisconnect, qr } = update;
+                    if (qr) {
+                        logger('QR code received, please scan:');
+                        qrcode.generate(qr, { small: true });
+                    }
+                    if (connection === 'open') {
+                        sock.ev.removeListener('connection.update', connectionUpdateListener);
+                        resolve(true); // Resolve with success
+                    } else if (connection === 'close') {
+                        sock.ev.removeListener('connection.update', connectionUpdateListener);
+                        const statusCode = (lastDisconnect.error)?.output?.statusCode;
+                        logger(`Connection closed due to ${lastDisconnect.error}`);
+                        if (statusCode === DisconnectReason.loggedOut) {
+                            reject(new Error('Logged out')); // This is a fatal error
+                        } else {
+                            resolve(false); // Not fatal, signal a retry
+                        }
+                    }
+                };
+                sock.ev.on('connection.update', connectionUpdateListener);
+            });
 
-  return new Promise((resolve, reject) => {
-    const connectionUpdateListener = (update) => {
-      const { connection, lastDisconnect, qr } = update;
-      if (qr) {
-        logger('QR code received, please scan:');
-        qrcode.generate(qr, { small: true });
-      }
-      if (connection === 'open') {
-        logger('WhatsApp client is ready!');
-        sock.ev.removeListener('connection.update', connectionUpdateListener);
-        resolve();
-      } else if (connection === 'close') {
-        const isLoggedOut = (lastDisconnect.error)?.output?.statusCode === DisconnectReason.loggedOut;
-        if (isLoggedOut) {
-          logger('Connection closed: Logged out. Please re-scan the QR code.');
-          sock.ev.removeListener('connection.update', connectionUpdateListener);
-          reject(new Error('Logged out'));
-        } else {
-            logger(`Connection closed due to ${lastDisconnect.error}, waiting for automatic reconnect...`);
+            const attemptResult = await connectionPromise;
+            if (attemptResult === true) {
+                connected = true; // Success! Break the loop.
+                logger('WhatsApp client is ready!');
+            } else {
+                logger('Connection attempt failed, will retry...');
+            }
+        } catch (error) {
+            logger(`Fatal error during connection: ${error.message}. Stopping.`);
+            throw error; // Rethrow to be caught by main.mjs
         }
-      }
-    };
-    sock.ev.on('connection.update', connectionUpdateListener);
-  });
+    }
 }
 
 export async function sendNotification({ logger, recipients, textContent }) {
